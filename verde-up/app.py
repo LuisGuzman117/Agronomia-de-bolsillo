@@ -93,10 +93,12 @@ def generar_con_respaldo(client, img, prompt):
     for modelo in modelos_a_probar:
         for intento in range(2):
             try:
+                contents = [img, prompt] if img is not None else [prompt]
                 response = client.models.generate_content(
                     model=modelo,
-                    contents=[img, prompt]
+                    contents=contents
                 )
+                return response.text
                 return response.text
             except Exception as e:
                 ultimo_error = e
@@ -262,6 +264,37 @@ def registrar_evolucion(cultivo_id):
     conn.commit()
     conn.close()
     return jsonify({'mensaje': 'Evolución registrada correctamente'})
+
+# --- 5. GENERADOR DE GUÍA RECICLADA PERSONALIZADA CON IA ---
+@app.route('/api/guia-personalizada', methods=['POST'])
+def generar_guia_personalizada():
+    data = request.json or {}
+    materiales = data.get('materiales', '').strip()
+    espacio = data.get('espacio', 'Pared o balcón pequeño').strip()
+
+    if not materiales:
+        return jsonify({'error': 'Escribe al menos un material reciclado que tengas disponible.'}), 400
+
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key or api_key == 'tu_api_key_aqui':
+        return jsonify({
+            'guia': f'### Sistema Casero con {materiales}\n1. Lava y perfora orificios de drenaje.\n2. Coloca sustrato ligero y siembra **cilantro, espinaca o cebollín**.'
+        })
+
+    try:
+        client = genai.Client(api_key=api_key)
+        prompt = (
+            f"Eres un experto en agricultura urbana e hidroponía social de bajo costo para familias con pocos recursos. "
+            f"Crea una guía práctica paso a paso en español usando estos materiales disponibles: '{materiales}' "
+            f"para instalar en este espacio: '{espacio}'. "
+            "Responde de forma breve y estructurada con: 1) Nombre del sistema casero, "
+            "2) Alimentos recomendados y ahorro aproximado, 3) Pasos de armado (máximo 5 pasos claros), "
+            "4) Cuidado y riego básico."
+        )
+        texto = generar_con_respaldo(client, None, prompt)
+        return jsonify({'guia': texto})
+    except Exception as e:
+        return jsonify({'error': f'Servidores ocupados, intenta de nuevo en unos segundos. Detalle: {str(e)}'}), 503
 
 if __name__ == '__main__':
     init_db()
