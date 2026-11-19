@@ -586,12 +586,12 @@
 
     <script>
         let ultimoAnalisis = { texto: '', foto_url: '' };
-        const AI_REQUEST_TIMEOUT_MS = 25000;
+        const AI_REQUEST_TIMEOUT_MS = 50000;
         const MENSAJE_CONEXION_FLASK = 'No se pudo conectar con Flask. Ejecuta app.py desde la carpeta verde-up y abre http://127.0.0.1:5000; no abras index.html directamente.';
 
         function mensajeErrorSolicitudIA(error, mensajeGenerico) {
             if (error && error.name === 'AbortError') {
-                return 'La solicitud excedió 25 segundos. El servidor tiene su propio límite de espera; intenta de nuevo.';
+                return 'La solicitud excedió 50 segundos. El servidor tiene su propio límite de espera; intenta de nuevo.';
             }
             if (error instanceof TypeError || (error && error.message === 'Failed to fetch')) {
                 return MENSAJE_CONEXION_FLASK;
